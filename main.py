@@ -119,7 +119,18 @@ def coordinates(text: str):
                 return float(o[0]), float(o[1])
         except (ValueError, TypeError):
             pass
-    # Third: "lat, lon" style or "<num><hemisphere>, <num><hemisphere>" anywhere.
+    # Third: hemisphere-annotated lat/lon anywhere, e.g. "lat 34.05 N lon 118.24 W".
+    latm = re.search(r"(-?\d+(?:\.\d+)?)\s*([NSnso]{1,})", text)
+    lonm = re.search(r"(-?\d+(?:\.\d+)?)\s*([EWewo]{1,})", text)
+    if latm and lonm:
+        lat, lon = float(latm.group(1)), float(lonm.group(1))
+        if latm.group(2).upper() in ("S", "SOUTH"):
+            lat = -lat
+        if lonm.group(2).upper() in ("W", "WEST"):
+            lon = -lon
+        if is_lat(lat) and is_lon(lon):
+            return lat, lon
+    # Fourth: "lat, lon" / "45.5 S, 73.7 W" adjacent pairs.
     pairs = re.findall(_NUM + r"\s*[,;\s]+" + _NUM, text, re.I)
     for la, lah, lo, loh in pairs:
         lat, lon = float(la), float(lo)
